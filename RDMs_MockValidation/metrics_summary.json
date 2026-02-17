@@ -1,0 +1,135 @@
+{
+  "single_seed_results": {
+    "TEST_0_deterministic_tinyNoise": {
+      "spec": {
+        "name": "TEST_0_deterministic_tinyNoise",
+        "signal_scale": 1.0,
+        "noise_sd": 0.001,
+        "structure": "two_cluster",
+        "separation": 2.0
+      },
+      "seed": 123,
+      "strict_images_kept": 60,
+      "roi_A_rdm_summary": {
+        "min": 0.0,
+        "max": 3921402.8125,
+        "mean": 2382829.0011805557,
+        "fraction_negative": 0.0
+      },
+      "roi_A_corr_recovered_vs_truth_WEIGHTED": 0.9999999983286572,
+      "roi_A_maxabsdiff_recovered_minus_truth_WEIGHTED": 284.04760508053005,
+      "observed_key_similarities": {
+        "corr(ROI_A, ROI_B)": 0.9999826227707415,
+        "corr(ROI_A, ROI_C)": -0.017368439811618043,
+        "corr(ROI_A, ROI_D)": -0.014196598204107885
+      }
+    },
+    "TEST_1_pure_noise": {
+      "spec": {
+        "name": "TEST_1_pure_noise",
+        "signal_scale": 0.0,
+        "noise_sd": 1.0,
+        "structure": "noise",
+        "separation": 2.0
+      },
+      "seed": 123,
+      "strict_images_kept": 60,
+      "roi_A_rdm_summary": {
+        "min": -0.23436258314177394,
+        "max": 0.2602894511073828,
+        "mean": 0.03089620806288268,
+        "fraction_negative": 0.3161111111111111
+      },
+      "roi_A_corr_recovered_vs_truth_WEIGHTED": 0.0,
+      "roi_A_maxabsdiff_recovered_minus_truth_WEIGHTED": 0.2602894511073828,
+      "observed_key_similarities": {
+        "corr(ROI_A, ROI_B)": -0.039715409943753555,
+        "corr(ROI_A, ROI_C)": -0.02054505385687235,
+        "corr(ROI_A, ROI_D)": -0.03896375459097525
+      }
+    },
+    "TEST_2_two_cluster_strongSignal": {
+      "spec": {
+        "name": "TEST_2_two_cluster_strongSignal",
+        "signal_scale": 1.0,
+        "noise_sd": 0.5,
+        "structure": "two_cluster",
+        "separation": 2.0
+      },
+      "seed": 123,
+      "strict_images_kept": 60,
+      "roi_A_rdm_summary": {
+        "min": 0.0,
+        "max": 39.90929698944092,
+        "mean": 24.05920338869095,
+        "fraction_negative": 0.0
+      },
+      "roi_A_corr_recovered_vs_truth_WEIGHTED": 0.9995713756807467,
+      "roi_A_maxabsdiff_recovered_minus_truth_WEIGHTED": 1.3950351430789851,
+      "observed_key_similarities": {
+        "corr(ROI_A, ROI_B)": 0.998886184951053,
+        "corr(ROI_A, ROI_C)": -0.019338393295265387,
+        "corr(ROI_A, ROI_D)": -0.014229855289444858
+      }
+    }
+  },
+  "monte_carlo_spec": {
+    "name": "MC_moderateSNR",
+    "signal_scale": 1.0,
+    "noise_sd": 1.0,
+    "structure": "two_cluster",
+    "separation": 2.0
+  },
+  "monte_carlo_summary": {
+    "n_seeds": 20,
+    "corr_A_vs_truth_WEIGHTED_mean_sd": [
+      0.9978595759166078,
+      0.00025611007631478277
+    ],
+    "corr(A,B)_mean_sd": [
+      0.9955852091400846,
+      0.0006167828794440587
+    ],
+    "corr(A,C)_mean_sd": [
+      -0.0010405107741708634,
+      0.01816782575772612
+    ],
+    "corr(A,D)_mean_sd": [
+      0.005728325005764984,
+      0.029081686284204374
+    ]
+  },
+  "pass_fail": {
+    "TEST_0_near_perfect_corr": {
+      "pass": true,
+      "corr": 0.9999999983286572
+    },
+    "TEST_1_pure_noise_mean_near_0": {
+      "pass": true,
+      "mean": 0.03089620806288268,
+      "fraction_negative_descriptive": 0.3161111111111111
+    },
+    "TEST_2_strong_signal_corr_positive": {
+      "pass": true,
+      "corr": 0.9995713756807467
+    },
+    "AcrossROI_expected_pattern_strong_signal": {
+      "pass": true,
+      "A_B": 0.998886184951053,
+      "A_C": -0.019338393295265387,
+      "A_D": -0.014229855289444858
+    },
+    "MonteCarlo_moderateSNR_corr_positive_on_average": {
+      "pass": true,
+      "mean_sd": [
+        0.9978595759166078,
+        0.00025611007631478277
+      ]
+    }
+  },
+  "interpretation_simple": [
+    "When we inject known representational structure, recovered crossnobis RDM matches the expected (weighted) ground truth.",
+    "When we inject pure noise (no structure), crossnobis distances average to ~0 (unbiased).",
+    "Across-ROI RSA behaves meaningfully: same-geometry ROI_B matches ROI_A, independent ROI_C ~0, permuted-label ROI_D ~0."
+  ]
+}

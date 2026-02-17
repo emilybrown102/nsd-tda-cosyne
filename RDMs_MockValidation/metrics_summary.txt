@@ -1,0 +1,39 @@
+=== TEST_0_deterministic_tinyNoise ===
+Spec: {'name': 'TEST_0_deterministic_tinyNoise', 'signal_scale': 1.0, 'noise_sd': 0.001, 'structure': 'two_cluster', 'separation': 2.0}
+ROI_A stats: mean=2382829.0012, frac_neg=0.000, min=0.000, max=3921402.812
+Corr(recovered ROI_A, truth ROI_A) [WEIGHTED]: 1.000
+Across-ROI RSA similarity (corr of RDMs):
+  corr(A,B) expected + : 1.000
+  corr(A,C) expected ~0: -0.017
+  corr(A,D) expected ~0 (permuted): -0.014
+
+=== TEST_1_pure_noise ===
+Spec: {'name': 'TEST_1_pure_noise', 'signal_scale': 0.0, 'noise_sd': 1.0, 'structure': 'noise', 'separation': 2.0}
+ROI_A stats: mean=0.0309, frac_neg=0.316, min=-0.234, max=0.260
+Corr(recovered ROI_A, truth ROI_A) [WEIGHTED]: 0.000
+Across-ROI RSA similarity (corr of RDMs):
+  corr(A,B) expected + : -0.040
+  corr(A,C) expected ~0: -0.021
+  corr(A,D) expected ~0 (permuted): -0.039
+
+=== TEST_2_two_cluster_strongSignal ===
+Spec: {'name': 'TEST_2_two_cluster_strongSignal', 'signal_scale': 1.0, 'noise_sd': 0.5, 'structure': 'two_cluster', 'separation': 2.0}
+ROI_A stats: mean=24.0592, frac_neg=0.000, min=0.000, max=39.909
+Corr(recovered ROI_A, truth ROI_A) [WEIGHTED]: 1.000
+Across-ROI RSA similarity (corr of RDMs):
+  corr(A,B) expected + : 0.999
+  corr(A,C) expected ~0: -0.019
+  corr(A,D) expected ~0 (permuted): -0.014
+
+=== MONTE CARLO (moderate SNR; 20 seeds) ===
+Corr(A vs truth) mean±sd: 0.998 ± 0.000
+corr(A,B) mean±sd: 0.996 ± 0.001
+corr(A,C) mean±sd: -0.001 ± 0.018
+corr(A,D) mean±sd: 0.006 ± 0.029
+
+=== PASS/FAIL SUMMARY ===
+TEST_0_near_perfect_corr: PASS  ({'corr': 0.9999999983286572})
+TEST_1_pure_noise_mean_near_0: PASS  ({'mean': 0.03089620806288268, 'fraction_negative_descriptive': 0.3161111111111111})
+TEST_2_strong_signal_corr_positive: PASS  ({'corr': 0.9995713756807467})
+AcrossROI_expected_pattern_strong_signal: PASS  ({'A_B': 0.998886184951053, 'A_C': -0.019338393295265387, 'A_D': -0.014229855289444858})
+MonteCarlo_moderateSNR_corr_positive_on_average: PASS  ({'mean_sd': (0.9978595759166078, 0.00025611007631478277)})
