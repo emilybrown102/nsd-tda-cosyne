@@ -1,0 +1,10 @@
+RDM: D:\Emily\NSD_cogsci_sandbox\COGS401\COSYNE\RDMs_Final\subjects\subj01\ROI-V1_crossnobis_STRICT3_sessionSplit_raw.npy
+N_NULL=50, SEED=123, NULL_MODE=shuffle_distances
+SHIFT_IF_NEGATIVE=True
+
+Max persistence (real): 0.9756032824516296
+Null mean: 0.7083342730998993
+Null std: 0.03258124771739238
+Max null: 0.8002874851226807
+Empirical p-value (null >= real): 0.0
+Real ranks higher than 50/50 null draws
