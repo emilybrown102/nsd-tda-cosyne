@@ -1,0 +1,25 @@
+{
+  "subject": 2,
+  "roi": "LO2",
+  "n_nodes": 157,
+  "shift_added_to_make_nonnegative": 3.573416591690613,
+  "maxdist_thresh": null,
+  "H0": {
+    "n": 157,
+    "n_finite": 156,
+    "max_persistence": 2.969442129135132,
+    "median_persistence": 2.144235610961914
+  },
+  "H1": {
+    "n": 374,
+    "n_finite": 374,
+    "max_persistence": 1.8866028785705566,
+    "median_persistence": 0.2169286012649536
+  },
+  "H2": {
+    "n": 554,
+    "n_finite": 554,
+    "max_persistence": 0.47272396087646484,
+    "median_persistence": 0.07420659065246582
+  }
+}

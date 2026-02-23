@@ -1,0 +1,25 @@
+{
+  "subject": 3,
+  "roi": "PH",
+  "n_nodes": 157,
+  "shift_added_to_make_nonnegative": 4.0725661265419255,
+  "maxdist_thresh": null,
+  "H0": {
+    "n": 157,
+    "n_finite": 156,
+    "max_persistence": 3.312527894973755,
+    "median_persistence": 2.6380507946014404
+  },
+  "H1": {
+    "n": 935,
+    "n_finite": 935,
+    "max_persistence": 1.909325122833252,
+    "median_persistence": 0.3466050624847412
+  },
+  "H2": {
+    "n": 1751,
+    "n_finite": 1751,
+    "max_persistence": 0.4060935974121094,
+    "median_persistence": 0.06511998176574707
+  }
+}

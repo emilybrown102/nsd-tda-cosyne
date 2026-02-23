@@ -1,0 +1,25 @@
+{
+  "subject": 3,
+  "roi": "STSva",
+  "n_nodes": 157,
+  "shift_added_to_make_nonnegative": 2.7713485072122346,
+  "maxdist_thresh": null,
+  "H0": {
+    "n": 157,
+    "n_finite": 156,
+    "max_persistence": 2.5182206630706787,
+    "median_persistence": 1.668915033340454
+  },
+  "H1": {
+    "n": 714,
+    "n_finite": 714,
+    "max_persistence": 1.516291618347168,
+    "median_persistence": 0.2583584785461426
+  },
+  "H2": {
+    "n": 1287,
+    "n_finite": 1287,
+    "max_persistence": 0.3480219841003418,
+    "median_persistence": 0.05120444297790527
+  }
+}

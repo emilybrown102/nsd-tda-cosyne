@@ -1,0 +1,25 @@
+{
+  "subject": 4,
+  "roi": "V3",
+  "n_nodes": 157,
+  "shift_added_to_make_nonnegative": 3.3265926847921143,
+  "maxdist_thresh": null,
+  "H0": {
+    "n": 157,
+    "n_finite": 156,
+    "max_persistence": 2.990154981613159,
+    "median_persistence": 2.1466870307922363
+  },
+  "H1": {
+    "n": 805,
+    "n_finite": 805,
+    "max_persistence": 2.0707607865333557,
+    "median_persistence": 0.21765351295471191
+  },
+  "H2": {
+    "n": 1419,
+    "n_finite": 1419,
+    "max_persistence": 0.3403196334838867,
+    "median_persistence": 0.06026196479797363
+  }
+}

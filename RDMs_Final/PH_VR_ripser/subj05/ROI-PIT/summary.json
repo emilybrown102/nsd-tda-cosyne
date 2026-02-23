@@ -1,0 +1,25 @@
+{
+  "subject": 5,
+  "roi": "PIT",
+  "n_nodes": 157,
+  "shift_added_to_make_nonnegative": 5.160455704735352,
+  "maxdist_thresh": null,
+  "H0": {
+    "n": 157,
+    "n_finite": 156,
+    "max_persistence": 4.335882186889648,
+    "median_persistence": 3.288947820663452
+  },
+  "H1": {
+    "n": 1391,
+    "n_finite": 1391,
+    "max_persistence": 2.5698602199554443,
+    "median_persistence": 0.4766829013824463
+  },
+  "H2": {
+    "n": 2382,
+    "n_finite": 2382,
+    "max_persistence": 0.5640926361083984,
+    "median_persistence": 0.07292890548706055
+  }
+}
