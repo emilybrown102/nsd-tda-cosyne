@@ -1,0 +1,33 @@
+{
+  "B": 200,
+  "RNG_SEED": 20260219,
+  "SUBJECTS": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "ROIS": [
+    "V1",
+    "V2",
+    "V3",
+    "V4",
+    "PIT",
+    "PH",
+    "STSva",
+    "MT",
+    "LO2"
+  ],
+  "SUBSAMPLE_FRAC": 0.8,
+  "SUBSAMPLE_SIZE": 126,
+  "EPS_SHIFT": 1e-06,
+  "MAXDIM": 1,
+  "TOP_L_PER_SUBSAMPLE": 10,
+  "PERSIST_MIN_FRAC_OF_MAXDIST": 0.05,
+  "CLUSTER_EPS_FRAC_OF_MAXDIST": 0.012,
+  "ROBUST_CLUSTER_HITRATE_MIN": 0.8,
+  "CYCLE_EPS_FRAC_PERSIST": 0.05,
+  "MIN_CYCLE_LEN": 4,
+  "CHECK_ORDER_IDENTITY_ACROSS_SUBJECTS": true
+}
