@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 r"""
-ph_batch_ripser_vr_STRICT2_NOFIGS.py
 ===========================================================
 Persistent homology (H0/H1/H2) on CROSSNOBIS RDMs using ripser
 (Vietoris–Rips filtration on a distance matrix), for STRICT2 outputs.
