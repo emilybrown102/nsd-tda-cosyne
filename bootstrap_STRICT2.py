@@ -1,203 +1,309 @@
 #!/usr/bin/env python
-r"""
-===========================================================
-Persistent homology (H0/H1/H2) on CROSSNOBIS RDMs using ripser
-(Vietoris–Rips filtration on a distance matrix), for STRICT2 outputs.
+"""
+============================================================
+Goal:
+  1) Bootstrap subsample RDMs to find robust H1 features (loops)
+  2) Save robust cluster summaries (NO VR graph visualization)
 
-Same as original STRICT2 script EXCEPT:
-- Does NOT generate persistence diagrams
-- Does NOT generate Betti curves
-- Does NOT create figs/ directory
+Inputs:
+  - STRICT2/STRICT3 raw RDMs (npy) in:
+      RDMs_Final/subjects/subjXX/ROI-<ROI>_crossnobis_STRICT*_sessionSplit_raw.npy
 
-All PH computations and summaries remain identical.
-===========================================================
+Outputs:
+  - robust_clusters_H1.csv
+  - per subj×ROI:
+      bootstrap_topL_features_H1.csv
+      consensus_clusters_H1.csv
+
+Requires:
+  pip install ripser pandas numpy
+
+Notes:
+  - Persistent homology uses ripser on distance matrices.
+  - Distances can be slightly negative (crossnobis). We shift by a constant
+    so min off-diagonal becomes > 0 (topology preserved up to a constant shift).
+============================================================
 """
 
 from __future__ import annotations
 
-import json
-import re
+from dataclasses import dataclass
 from pathlib import Path
+from typing import List, Tuple
 
 import numpy as np
 import pandas as pd
+from ripser import ripser
 
-# ---------------- CONFIG ----------------
+
+# =========================
+# CONFIG (EDIT THESE)
+# =========================
+
 ROOT = Path(r"D:\Emily\NSD_cogsci_sandbox")
 RDM_ROOT = ROOT / "COGS401" / "COSYNE" / "RDMs_Final" / "subjects"
 
-OUT_ROOT = ROOT / "COGS401" / "COSYNE" / "RDMs_Final" / "PH_VR_ripser_STRICT2_NOFIGS"
+STRICT_TAG = "STRICT2"   # "STRICT2" or "STRICT3"
+SUBJECTS = [1, 2, 3, 4, 5]
+ROIS = ["V1", "V2", "V3", "V4", "LO2", "MT", "PH", "STSva", "PIT"]
+
+# Bootstrap settings
+B = 200
+SUBSAMPLE_FRAC = 0.80
+RANDOM_SEED = 123
+
+# Persistent homology settings
+MAXDIM = 1  # only need H1 for loops
+SHIFT_EPS = 1e-9
+PERSIST_FLOOR_FRAC = 0.05   # persistence >= 5% of max distance (per bootstrap replicate)
+TOP_L = 10                  # keep top L H1 features per bootstrap replicate
+
+# Consensus clustering
+CLUSTER_TOL_FRAC = 0.02     # tolerance in birth/death space as fraction of maxdist_full
+MIN_HITS = max(5, int(0.05 * B))
+
+# Output folder
+OUT_ROOT = ROOT / "COGS401" / "COSYNE" / "RDMs_Final" / "PH_VR_ripser" / f"bootstrap{B}_subsample_consensus_{STRICT_TAG}"
 OUT_ROOT.mkdir(parents=True, exist_ok=True)
 
-SUBJECTS = [1, 2, 3, 4, 5]
-MAXDIM = 2
 
-SHIFT_EPS = 1e-9
-SYM_TOL = 1e-6
-DIAG_TOL = 1e-8
-USE_MAXDIST_QUANTILE = None
+# =========================
+# Helpers
+# =========================
 
-ROI_RE = re.compile(r"ROI-([A-Za-z0-9]+)_crossnobis_STRICT2_sessionSplit_raw\.npy$")
-
-try:
-    from ripser import ripser
-except Exception as e:
-    raise RuntimeError(
-        "Missing dependency ripser. Install: python -m pip install ripser\n"
-        f"Import error: {e}"
-    )
-
-
-# ---------------- Helpers ----------------
-
-def discover_rdms_for_subject(subj: int):
-    subj_dir = RDM_ROOT / f"subj{subj:02d}"
-    if not subj_dir.exists():
-        raise FileNotFoundError(subj_dir)
-
-    out = []
-    for f in sorted(subj_dir.glob("ROI-*_crossnobis_STRICT2_sessionSplit_raw.npy")):
-        m = ROI_RE.search(f.name)
-        if m:
-            out.append((m.group(1), f))
-
-    if not out:
-        raise RuntimeError(f"No STRICT2 RAW RDMs found for subj{subj:02d}")
-    return out
-
-
-def basic_checks(D: np.ndarray, fpath: Path):
+def load_rdm(subj: int, roi: str) -> np.ndarray:
+    f = RDM_ROOT / f"subj{subj:02d}" / f"ROI-{roi}_crossnobis_{STRICT_TAG}_sessionSplit_raw.npy"
+    if not f.exists():
+        raise FileNotFoundError(f"Missing RDM: {f}")
+    D = np.load(f).astype(np.float64)
     if D.ndim != 2 or D.shape[0] != D.shape[1]:
-        raise RuntimeError(f"{fpath}: matrix not square")
-
+        raise ValueError(f"RDM not square: {f} shape={D.shape}")
     if not np.isfinite(D).all():
-        raise RuntimeError(f"{fpath}: non-finite entries")
-
-    if np.max(np.abs(D - D.T)) > SYM_TOL:
-        raise RuntimeError(f"{fpath}: not symmetric")
-
-    if np.max(np.abs(np.diag(D))) > DIAG_TOL:
-        raise RuntimeError(f"{fpath}: diagonal not ~0")
+        raise ValueError(f"RDM has non-finite values: {f}")
+    D = 0.5 * (D + D.T)
+    np.fill_diagonal(D, 0.0)
+    return D
 
 
-def shift_to_nonnegative(D: np.ndarray, eps: float):
+def shift_to_nonnegative(D: np.ndarray, eps: float = 1e-9) -> Tuple[np.ndarray, float]:
     n = D.shape[0]
     off = D[~np.eye(n, dtype=bool)]
-    min_off = float(np.min(off))
-
-    if min_off >= 0:
+    m = float(np.min(off))
+    if m >= 0:
         return D.copy(), 0.0
-
-    shift = (-min_off) + eps
-    return D + shift, shift
-
-
-def choose_maxdist(D_shift: np.ndarray, q):
-    if q is None:
-        return None
-
-    n = D_shift.shape[0]
-    off = D_shift[~np.eye(n, dtype=bool)]
-    return float(np.quantile(off, q))
+    shift = (-m) + eps
+    D2 = D + shift
+    np.fill_diagonal(D2, 0.0)
+    return D2, shift
 
 
-def summarize_diagram(dgm: np.ndarray):
+def max_offdiag(D: np.ndarray) -> float:
+    n = D.shape[0]
+    off = D[~np.eye(n, dtype=bool)]
+    return float(np.max(off))
+
+
+def subsample_indices(n: int, frac: float, rng: np.random.Generator) -> np.ndarray:
+    k = int(round(frac * n))
+    k = max(5, min(n, k))
+    return rng.choice(n, size=k, replace=False)
+
+
+def ripser_H1(D: np.ndarray):
+    return ripser(D, distance_matrix=True, maxdim=MAXDIM, do_cocycles=False)
+
+
+def diagram_H1(res) -> np.ndarray:
+    dgms = res["dgms"]
+    return dgms[1] if len(dgms) > 1 else np.zeros((0, 2), dtype=float)
+
+
+def finite_persistence(dgm: np.ndarray) -> np.ndarray:
     if dgm.size == 0:
-        return {"n": 0, "n_finite": 0, "max_persistence": 0.0, "median_persistence": 0.0}
-
+        return np.zeros((0,), dtype=float)
     b = dgm[:, 0]
     d = dgm[:, 1]
     finite = np.isfinite(d)
-
-    if finite.sum() == 0:
-        return {"n": int(dgm.shape[0]), "n_finite": 0, "max_persistence": 0.0, "median_persistence": 0.0}
-
-    pers = d[finite] - b[finite]
-
-    return {
-        "n": int(dgm.shape[0]),
-        "n_finite": int(finite.sum()),
-        "max_persistence": float(np.max(pers)) if pers.size else 0.0,
-        "median_persistence": float(np.median(pers)) if pers.size else 0.0,
-    }
+    pers = np.zeros_like(b)
+    pers[finite] = d[finite] - b[finite]
+    pers[~finite] = np.nan
+    return pers
 
 
-def run_ripser_distance(D_shift: np.ndarray, maxdim: int, thresh):
-    kwargs = dict(distance_matrix=True, maxdim=maxdim)
-    if thresh is not None:
-        kwargs["thresh"] = float(thresh)
-    return ripser(D_shift, **kwargs)
+@dataclass
+class Feature:
+    birth: float
+    death: float
+    persistence: float
+    maxdist: float
+    boot_i: int
 
 
-# ---------------- MAIN ----------------
+def extract_top_features(
+    dgmH1: np.ndarray, maxdist_here: float, top_L: int, floor_frac: float, boot_i: int
+) -> List[Feature]:
+    if dgmH1.size == 0:
+        return []
+    pers = finite_persistence(dgmH1)
+    finite = np.isfinite(pers)
+    if not finite.any():
+        return []
+
+    births = dgmH1[finite, 0]
+    deaths = dgmH1[finite, 1]
+    pers_f = pers[finite]
+
+    floor = floor_frac * maxdist_here
+    keep = pers_f >= floor
+    births, deaths, pers_f = births[keep], deaths[keep], pers_f[keep]
+    if births.size == 0:
+        return []
+
+    order = np.argsort(-pers_f)[: min(top_L, len(pers_f))]
+
+    out: List[Feature] = []
+    for j in order:
+        out.append(
+            Feature(
+                birth=float(births[j]),
+                death=float(deaths[j]),
+                persistence=float(pers_f[j]),
+                maxdist=float(maxdist_here),
+                boot_i=int(boot_i),
+            )
+        )
+    return out
+
+
+def cluster_features(features: List[Feature], tol: float) -> List[List[Feature]]:
+    clusters: List[List[Feature]] = []
+    for f in features:
+        placed = False
+        for c in clusters:
+            cb = np.mean([x.birth for x in c])
+            cd = np.mean([x.death for x in c])
+            if max(abs(f.birth - cb), abs(f.death - cd)) <= tol:
+                c.append(f)
+                placed = True
+                break
+        if not placed:
+            clusters.append([f])
+    return clusters
+
+
+def centroid(cluster: List[Feature]) -> Tuple[float, float, float]:
+    b = float(np.mean([x.birth for x in cluster]))
+    d = float(np.mean([x.death for x in cluster]))
+    p = float(np.mean([x.persistence for x in cluster]))
+    return b, d, p
+
+
+def run_bootstrap_for_subject_roi(
+    D_full: np.ndarray, rng: np.random.Generator
+) -> Tuple[pd.DataFrame, List[List[Feature]]]:
+    D_shift, _ = shift_to_nonnegative(D_full, eps=SHIFT_EPS)
+    n = D_shift.shape[0]
+
+    all_feats: List[Feature] = []
+
+    for b in range(B):
+        idx = subsample_indices(n, SUBSAMPLE_FRAC, rng)
+        Ds = D_shift[np.ix_(idx, idx)]
+        md = max_offdiag(Ds)
+
+        res = ripser_H1(Ds)
+        dgm = diagram_H1(res)
+
+        feats = extract_top_features(dgm, md, TOP_L, PERSIST_FLOOR_FRAC, boot_i=b)
+        all_feats.extend(feats)
+
+    if len(all_feats) == 0:
+        return pd.DataFrame(), []
+
+    md_full = max_offdiag(D_shift)
+    tol = CLUSTER_TOL_FRAC * md_full
+    clusters = cluster_features(all_feats, tol=tol)
+
+    feats_df = pd.DataFrame(
+        [{
+            "boot": f.boot_i,
+            "birth": f.birth,
+            "death": f.death,
+            "persistence": f.persistence,
+            "maxdist_boot": f.maxdist,
+        } for f in all_feats]
+    )
+    return feats_df, clusters
+
 
 def main():
-    rows = []
+    rng = np.random.default_rng(RANDOM_SEED)
+
+    robust_rows = []
 
     for subj in SUBJECTS:
-        print(f"\n=== Subject {subj:02d} ===")
-        roi_files = discover_rdms_for_subject(subj)
+        for roi in ROIS:
+            print(f"\n=== subj{subj:02d} {roi} ===")
+            D = load_rdm(subj, roi)
+            D_shift, shift_added = shift_to_nonnegative(D, eps=SHIFT_EPS)
+            md_full = max_offdiag(D_shift)
 
-        subj_out = OUT_ROOT / f"subj{subj:02d}"
-        subj_out.mkdir(parents=True, exist_ok=True)
+            feats_df, clusters = run_bootstrap_for_subject_roi(D, rng)
+            if feats_df.empty or len(clusters) == 0:
+                print("  No H1 features survived floor/top-L in bootstraps.")
+                continue
 
-        for roi, fpath in roi_files:
-            print(f"  -> ROI {roi}")
+            # summarize clusters
+            summaries = []
+            for ci, cl in enumerate(clusters):
+                hits = len(set([f.boot_i for f in cl]))
+                hit_rate = hits / B
+                b0, d0, p0 = centroid(cl)
+                summaries.append({
+                    "cluster_id": ci,
+                    "hits": hits,
+                    "hit_rate": hit_rate,
+                    "birth": b0,
+                    "death": d0,
+                    "persistence": p0,
+                })
 
-            D_raw = np.load(fpath).astype(np.float64, copy=False)
-            basic_checks(D_raw, fpath)
+            summ_df = pd.DataFrame(summaries).sort_values(["hit_rate", "persistence"], ascending=[False, False])
+            summ_df["robust"] = summ_df["hits"] >= MIN_HITS
 
-            D_shift, shift_added = shift_to_nonnegative(D_raw, eps=SHIFT_EPS)
-            np.fill_diagonal(D_shift, 0.0)
+            # store robust rows to CSV
+            for _, r in summ_df.iterrows():
+                robust_rows.append({
+                    "subject": subj,
+                    "roi": roi,
+                    "cluster_id": int(r["cluster_id"]),
+                    "hits": int(r["hits"]),
+                    "hit_rate": float(r["hit_rate"]),
+                    "birth": float(r["birth"]),
+                    "death": float(r["death"]),
+                    "persistence": float(r["persistence"]),
+                    "maxdist_full": float(md_full),
+                    "shift_added": float(shift_added),
+                    "robust": bool(r["robust"]),
+                    "B": int(B),
+                    "subsample_frac": float(SUBSAMPLE_FRAC),
+                    "persist_floor_frac": float(PERSIST_FLOOR_FRAC),
+                    "top_L": int(TOP_L),
+                    "cluster_tol_frac": float(CLUSTER_TOL_FRAC),
+                    "min_hits": int(MIN_HITS),
+                    "strict_tag": STRICT_TAG,
+                })
 
-            maxdist = choose_maxdist(D_shift, USE_MAXDIST_QUANTILE)
-            res = run_ripser_distance(D_shift, maxdim=MAXDIM, thresh=maxdist)
+            # Save transparency tables
+            out_dir = OUT_ROOT / f"subj{subj:02d}" / f"ROI-{roi}"
+            out_dir.mkdir(parents=True, exist_ok=True)
+            feats_df.to_csv(out_dir / "bootstrap_topL_features_H1.csv", index=False)
+            summ_df.to_csv(out_dir / "consensus_clusters_H1.csv", index=False)
 
-            dgms = res["dgms"]
-
-            roi_out = subj_out / f"ROI-{roi}"
-            roi_out.mkdir(parents=True, exist_ok=True)
-
-            np.save(roi_out / "used_distance_matrix_SHIFTED.npy", D_shift)
-
-            for dim in range(MAXDIM + 1):
-                np.save(roi_out / f"dgm_H{dim}.npy", dgms[dim])
-
-            s0 = summarize_diagram(dgms[0])
-            s1 = summarize_diagram(dgms[1])
-            s2 = summarize_diagram(dgms[2])
-
-            summary = {
-                "subject": subj,
-                "roi": roi,
-                "n_nodes": int(D_raw.shape[0]),
-                "strict_version": "STRICT2",
-                "shift_added_to_make_nonnegative": float(shift_added),
-                "maxdist_thresh": None if maxdist is None else float(maxdist),
-                "H0": s0,
-                "H1": s1,
-                "H2": s2,
-            }
-
-            (roi_out / "summary.json").write_text(json.dumps(summary, indent=2))
-
-            rows.append({
-                "subject": subj,
-                "roi": roi,
-                "n_nodes": int(D_raw.shape[0]),
-                "H1_n": s1["n"],
-                "H1_max_persistence": s1["max_persistence"],
-                "H1_median_persistence": s1["median_persistence"],
-                "H2_n": s2["n"],
-                "H2_max_persistence": s2["max_persistence"],
-                "H2_median_persistence": s2["median_persistence"],
-                "out_dir": str(roi_out),
-            })
-
-    out_csv = OUT_ROOT / "ph_summary.csv"
-    pd.DataFrame(rows).to_csv(out_csv, index=False)
-
-    print(f"\n✅ DONE. Master summary: {out_csv}")
+    # master robust CSV
+    out_csv = OUT_ROOT / "robust_clusters_H1.csv"
+    pd.DataFrame(robust_rows).to_csv(out_csv, index=False)
+    print(f"\n✅ Wrote robust clusters: {out_csv}")
 
 
 if __name__ == "__main__":
