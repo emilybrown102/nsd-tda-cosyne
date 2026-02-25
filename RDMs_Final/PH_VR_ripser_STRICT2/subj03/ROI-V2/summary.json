@@ -1,0 +1,27 @@
+{
+  "subject": 3,
+  "roi": "V2",
+  "n_nodes": 609,
+  "strict_version": "STRICT2",
+  "input_file": "D:\\Emily\\NSD_cogsci_sandbox\\COGS401\\COSYNE\\RDMs_Final\\subjects\\subj03\\ROI-V2_crossnobis_STRICT2_sessionSplit_raw.npy",
+  "shift_added_to_make_nonnegative": 5.83051660756929,
+  "maxdist_thresh": null,
+  "H0": {
+    "n": 609,
+    "n_finite": 608,
+    "max_persistence": 5.04098653793335,
+    "median_persistence": 3.4960750341415405
+  },
+  "H1": {
+    "n": 3528,
+    "n_finite": 3528,
+    "max_persistence": 2.73837673664093,
+    "median_persistence": 0.2753942012786865
+  },
+  "H2": {
+    "n": 17492,
+    "n_finite": 17492,
+    "max_persistence": 1.06901216506958,
+    "median_persistence": 0.10731697082519531
+  }
+}

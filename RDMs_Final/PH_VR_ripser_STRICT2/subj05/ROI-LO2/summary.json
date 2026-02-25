@@ -1,0 +1,27 @@
+{
+  "subject": 5,
+  "roi": "LO2",
+  "n_nodes": 609,
+  "strict_version": "STRICT2",
+  "input_file": "D:\\Emily\\NSD_cogsci_sandbox\\COGS401\\COSYNE\\RDMs_Final\\subjects\\subj05\\ROI-LO2_crossnobis_STRICT2_sessionSplit_raw.npy",
+  "shift_added_to_make_nonnegative": 13.026232183979584,
+  "maxdist_thresh": null,
+  "H0": {
+    "n": 609,
+    "n_finite": 608,
+    "max_persistence": 11.688876152038574,
+    "median_persistence": 8.44888162612915
+  },
+  "H1": {
+    "n": 11983,
+    "n_finite": 11983,
+    "max_persistence": 8.602438807487488,
+    "median_persistence": 0.840388298034668
+  },
+  "H2": {
+    "n": 37871,
+    "n_finite": 37871,
+    "max_persistence": 1.5494003295898438,
+    "median_persistence": 0.1574840545654297
+  }
+}

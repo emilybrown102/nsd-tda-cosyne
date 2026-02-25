@@ -1,0 +1,27 @@
+{
+  "subject": 4,
+  "roi": "STSva",
+  "n_nodes": 609,
+  "strict_version": "STRICT2",
+  "input_file": "D:\\Emily\\NSD_cogsci_sandbox\\COGS401\\COSYNE\\RDMs_Final\\subjects\\subj04\\ROI-STSva_crossnobis_STRICT2_sessionSplit_raw.npy",
+  "shift_added_to_make_nonnegative": 13.801858977483345,
+  "maxdist_thresh": null,
+  "H0": {
+    "n": 609,
+    "n_finite": 608,
+    "max_persistence": 11.810456275939941,
+    "median_persistence": 9.405667304992676
+  },
+  "H1": {
+    "n": 4286,
+    "n_finite": 4286,
+    "max_persistence": 6.887373924255371,
+    "median_persistence": 0.6868743896484375
+  },
+  "H2": {
+    "n": 13671,
+    "n_finite": 13671,
+    "max_persistence": 1.3750429153442383,
+    "median_persistence": 0.17159366607666016
+  }
+}

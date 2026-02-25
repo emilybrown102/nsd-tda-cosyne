@@ -1,0 +1,27 @@
+{
+  "subject": 2,
+  "roi": "PH",
+  "n_nodes": 609,
+  "strict_version": "STRICT2",
+  "input_file": "D:\\Emily\\NSD_cogsci_sandbox\\COGS401\\COSYNE\\RDMs_Final\\subjects\\subj02\\ROI-PH_crossnobis_STRICT2_sessionSplit_raw.npy",
+  "shift_added_to_make_nonnegative": 8.809518867240978,
+  "maxdist_thresh": null,
+  "H0": {
+    "n": 609,
+    "n_finite": 608,
+    "max_persistence": 7.802399635314941,
+    "median_persistence": 5.597630023956299
+  },
+  "H1": {
+    "n": 11579,
+    "n_finite": 11579,
+    "max_persistence": 4.613790273666382,
+    "median_persistence": 0.5677337646484375
+  },
+  "H2": {
+    "n": 15001,
+    "n_finite": 15001,
+    "max_persistence": 1.4534778594970703,
+    "median_persistence": 0.10423660278320312
+  }
+}
